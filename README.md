@@ -1,6 +1,6 @@
 # Implementing Multi-threaded Sorting Algorithms
 
-Project Group 22
+*Project Group 22*
 
 Comparison-based sorting algorithms, provably, cannot have an average case runtime better than O(n log n). 
 While this is a very good runtime in many cases, extremely large datasets can still take long periods of time to process. 
@@ -15,3 +15,13 @@ We will be implementing the following sorting algorithms:
 - Quick sort
 - Bubble sort
 - Insertion sort
+
+## Build Instructions
+
+Run the following make command:
+
+`make sorttest`
+
+Alternatively, compile with g++ directly:
+
+`g++ -o sorttest main.cpp Sequential/*.cpp Parallel/*.cpp`

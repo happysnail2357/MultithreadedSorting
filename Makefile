@@ -6,7 +6,7 @@
 #
 
 
-BUILDTARGETS = main.o seqMergeSort.o seqQuickSort.o seqBubbleSort.o seqInsertionSort.o parMergeSort.o parQuickSort.o parBubbleSort.o parInsertionSort.o
+BUILDTARGETS = main.o Stopwatch.o seqMergeSort.o seqQuickSort.o seqBubbleSort.o seqInsertionSort.o parMergeSort.o parQuickSort.o parBubbleSort.o parInsertionSort.o
 
 
 sorttest: $(BUILDTARGETS)
@@ -15,6 +15,9 @@ sorttest: $(BUILDTARGETS)
 
 main.o: main.cpp
 	g++ -c main.cpp
+
+Stopwatch.o: Stopwatch.cpp
+	g++ -c Stopwatch.cpp
 
 
 # Sequential Algorithms
@@ -51,4 +54,8 @@ parQuickSort.o: Parallel/parQuickSort.cpp
 
 clean:
 	rm *.o
-	rm sorttest.out
+	rm sorttest
+
+clean-outputs:
+	rm *.report
+	rm *.dump

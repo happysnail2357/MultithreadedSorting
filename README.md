@@ -25,3 +25,16 @@ Run the following make command:
 Alternatively, compile with g++ directly:
 
 `g++ -o sorttest main.cpp Sequential/*.cpp Parallel/*.cpp`
+
+## Usage
+
+Usage: `sorttest [Options...]`
+
+| Options        | Explanation                                                |
+| -------------- | ---------------------------------------------------------- |
+| -s             | Use the sequential version of the sorting algorithm        |
+| -p             | Use the parallel version of the sorting algorithm          |
+| -d --data      | Specify file name for input data                           |
+| -a --algorithm | Specify sort algorithm \<bubble\|insertion\|merge\|quick\> |
+| -v --verify    | Verify that the results are sorted                         |
+|    --help      | Show this message                                          |

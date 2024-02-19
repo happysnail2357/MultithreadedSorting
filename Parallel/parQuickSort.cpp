@@ -7,7 +7,7 @@
 #include "parSorts.hpp"
 
 
-void parQuickSort(std::vector<int64_t>* arr)
+void parQuickSort(std::vector<int32_t>* arr)
 {
 	
 }

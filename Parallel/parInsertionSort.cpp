@@ -7,7 +7,7 @@
 #include "parSorts.hpp"
 
 
-void parInsertionSort(std::vector<int64_t>* arr)
+void parInsertionSort(std::vector<int32_t>* arr)
 {
 	
 }

@@ -11,10 +11,10 @@
 #include <vector>
 #include <cstdint>
 
-void seqBubbleSort(std::vector<int64_t>*);
-void seqInsertionSort(std::vector<int64_t>*);
-void seqMergeSort(std::vector<int64_t>*);
-void seqQuickSort(std::vector<int64_t>*);
+void seqBubbleSort(std::vector<int32_t>*);
+void seqInsertionSort(std::vector<int32_t>*);
+void seqMergeSort(std::vector<int32_t>*);
+void seqQuickSort(std::vector<int32_t>*);
 
 
 #endif

@@ -7,7 +7,7 @@
 #include "seqSorts.hpp"
 
 
-void seqQuickSort(std::vector<int64_t>* arr)
+void seqQuickSort(std::vector<int32_t>* arr)
 {
 	
 }

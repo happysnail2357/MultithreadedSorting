@@ -7,7 +7,7 @@
 #include "seqSorts.hpp"
 
 
-void seqBubbleSort(std::vector<int64_t>* arr)
+void seqBubbleSort(std::vector<int32_t>* arr)
 {
 	
 }

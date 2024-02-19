@@ -7,7 +7,7 @@
 #include "seqSorts.hpp"
 
 
-void seqInsertionSort(std::vector<int64_t>* arr)
+void seqInsertionSort(std::vector<int32_t>* arr)
 {
 	
 }

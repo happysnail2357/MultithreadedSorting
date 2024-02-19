@@ -7,7 +7,7 @@
 #include "parSorts.hpp"
 
 
-void parMergeSort(std::vector<int64_t>* arr)
+void parMergeSort(std::vector<int32_t>* arr)
 {
 	
 }

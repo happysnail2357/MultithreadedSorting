@@ -7,7 +7,7 @@
 #include "seqSorts.hpp"
 
 
-void seqMergeSort(std::vector<int64_t>* arr)
+void seqMergeSort(std::vector<int32_t>* arr)
 {
 	
 }

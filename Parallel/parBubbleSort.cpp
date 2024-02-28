@@ -7,7 +7,7 @@
 #include "parSorts.hpp"
 
 
-void parBubbleSort(std::vector<int32_t>* arr)
+void parBubbleSort(std::vector<int32_t>* arr, int32_t numThreads)
 {
 	
 }

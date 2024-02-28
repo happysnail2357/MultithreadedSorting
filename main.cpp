@@ -26,10 +26,15 @@ enum class SortAlgorithm
 	Quick
 };
 
-const char* usageStr = "\n Usage: sorttest [options...]\n\n -s             : Use sequential version of sorting algorithm\n -p             : Use parallel version of sorting algorithm\n -d --data      : Specify file name for input data\n -a --algorithm : Specify algorithm <bubble|insertion|merge|quick>\n -v --verify    : Verify that results are sorted\n    --help      : Show this message\n\n";
+const char* usageStr = "\n Usage: sorttest [options...]\n\n -s             : Use sequential version of sorting algorithm\n -p             : Use parallel version of sorting algorithm\n -d --data      : Specify file name for input data\n -a --algorithm : Specify algorithm <bubble|insertion|merge|quick>\n -t --threads   : Specify number of threads to use for parallel sort\n -v --verify    : Verify that results are sorted\n    --help      : Show this message\n\n";
 
 
-void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgorithm* algo, bool* parallel, bool* verify)
+const int32_t MIN_NUM_THREADS = 2;
+const int32_t MAX_NUM_THREADS = 100;
+const int32_t DEFAULT_NUM_THREADS = 4;
+
+
+void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgorithm* algo, int32_t* numThreads, bool* parallel, bool* verify)
 {
 	if (argc == 1)
 	{
@@ -96,6 +101,59 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 				exit(1);
 			}
 		}
+		else if (arg == "-t" || arg == "--threads")
+		{
+			argi++;
+			
+			if (argi < argc)
+			{
+				std::string num = argv[argi];
+				
+				if (num.find_first_not_of("0123456789") == std::string::npos)
+				{
+					try
+					{
+						*numThreads = std::stoi(num);
+						
+						if (*numThreads < MIN_NUM_THREADS)
+						{
+							std::cout << "\n   ERROR: Value for " << arg << " must be at least " << MIN_NUM_THREADS << "\n\n";
+							exit(1);
+						}
+						else if (*numThreads > MAX_NUM_THREADS)
+						{
+							std::cout << "\n   ERROR: Value for " << arg << " must be no larger than " << MAX_NUM_THREADS << "\n\n";
+							exit(1);
+						}
+					}
+					catch (std::invalid_argument const& e)
+					{
+						std::cout << "\n   ERROR: Invalid value for " << arg << "\n\n";
+						exit(1);
+					}
+					catch (std::out_of_range const& e)
+					{
+						std::cout << "\n   ERROR: Value for " << arg << " too large for 32-bit integer\n\n";
+						exit(1);
+					}
+					catch (std::exception const& e)
+					{
+						std::cout << "\n   ERROR: " << e.what() << "\n\n";
+						exit(1);
+					}
+				}
+				else
+				{
+					std::cout << "\n   ERROR: Value for " << arg << " contains non-digit characters\n\n";
+					exit(1);
+				}
+			}
+			else
+			{
+				std::cout << "\n   ERROR: Missing value for " << arg << "\n\n";
+				exit(1);
+			}
+		}
 		else if (arg == "-v" || arg == "--verify")
 		{
 			*verify = true;
@@ -144,14 +202,14 @@ void loadTestData(std::string fileName, std::vector<int32_t>* buffer)
 }
 
 
-void runSortingAlgorithm(SortAlgorithm algorithm, bool parallelVersion, std::vector<int32_t>* buffer)
+void runSortingAlgorithm(SortAlgorithm algorithm, std::vector<int32_t>* buffer, bool parallelVersion, int32_t numThreads)
 {
 	switch (algorithm)
 	{
 	case SortAlgorithm::Bubble:
 		
 		if (parallelVersion)
-			parBubbleSort(buffer);
+			parBubbleSort(buffer, numThreads);
 		else
 			seqBubbleSort(buffer);
 		break;
@@ -159,7 +217,7 @@ void runSortingAlgorithm(SortAlgorithm algorithm, bool parallelVersion, std::vec
 	case SortAlgorithm::Insertion:
 		
 		if (parallelVersion)
-			parInsertionSort(buffer);
+			parInsertionSort(buffer, numThreads);
 		else
 			seqInsertionSort(buffer);
 		break;
@@ -167,7 +225,7 @@ void runSortingAlgorithm(SortAlgorithm algorithm, bool parallelVersion, std::vec
 	case SortAlgorithm::Merge:
 		
 		if (parallelVersion)
-			parMergeSort(buffer);
+			parMergeSort(buffer, numThreads);
 		else
 			seqMergeSort(buffer);
 		break;
@@ -175,7 +233,7 @@ void runSortingAlgorithm(SortAlgorithm algorithm, bool parallelVersion, std::vec
 	case SortAlgorithm::Quick:
 		
 		if (parallelVersion)
-			parQuickSort(buffer);
+			parQuickSort(buffer, numThreads);
 		else
 			seqQuickSort(buffer);
 		break;
@@ -221,7 +279,7 @@ void dumpToFile(std::string outputFileName, std::vector<int32_t>* buffer)
 }
 
 
-void generateReport(std::string outputFileName, std::string inputFileName, SortAlgorithm algorithm, bool parallel, std::string executionTime, std::string dateTime, bool wasVerified, bool verifyStatus)
+void generateReport(std::string outputFileName, std::string inputFileName, SortAlgorithm algorithm, bool parallel, int32_t numThreads, std::string executionTime, std::string dateTime, bool wasVerified, bool verifyStatus)
 {
 	std::cout << " Saving report... ";
 	
@@ -258,6 +316,12 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 	
 	reportStr << "\n";
 	reportStr << "Parallel Version  : " << ((parallel) ? "yes" : "no") << "\n";
+	
+	if (parallel)
+	{
+		reportStr << "Number of Threads : " << numThreads << "\n";
+	}
+	
 	reportStr << "Execution Time    : " << executionTime << "\n";
 	reportStr << "Verification      : ";
 	
@@ -380,10 +444,11 @@ int main(int argc, char** argv)
 	
 	std::string dataFile = "";
 	SortAlgorithm algorithm{};
+	int32_t numThreads = DEFAULT_NUM_THREADS;
 	bool parallel = false;
 	bool verify = false;
 	
-	parseCommandLineArgs(argc, argv, &dataFile, &algorithm, &parallel, &verify);
+	parseCommandLineArgs(argc, argv, &dataFile, &algorithm, &numThreads, &parallel, &verify);
 	
 	if (dataFile == "")
 	{
@@ -411,7 +476,7 @@ int main(int argc, char** argv)
 	Stopwatch timer;
 	timer.start();
 	
-	runSortingAlgorithm(algorithm, parallel, &data);
+	runSortingAlgorithm(algorithm, &data, parallel, numThreads);
 	
 	timer.stop();
 	
@@ -433,7 +498,7 @@ int main(int argc, char** argv)
 		success = verifyResults(&data, stampedFilename);
 	}
 	
-	generateReport(stampedFilename, dataFile, algorithm, parallel, timer.getFormattedTime(), timestamp, verify, success);
+	generateReport(stampedFilename, dataFile, algorithm, parallel, numThreads, timer.getFormattedTime(), timestamp, verify, success);
 	
 	return 0;
 }

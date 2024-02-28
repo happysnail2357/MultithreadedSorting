@@ -11,10 +11,10 @@
 #include <vector>
 #include <cstdint>
 
-void parBubbleSort(std::vector<int32_t>*);
-void parInsertionSort(std::vector<int32_t>*);
-void parMergeSort(std::vector<int32_t>*);
-void parQuickSort(std::vector<int32_t>*);
+void parBubbleSort(std::vector<int32_t>*, int32_t numThreads);
+void parInsertionSort(std::vector<int32_t>*, int32_t numThreads);
+void parMergeSort(std::vector<int32_t>*, int32_t numThreads);
+void parQuickSort(std::vector<int32_t>*, int32_t numThreads);
 
 
 #endif

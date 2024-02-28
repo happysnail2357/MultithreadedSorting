@@ -36,5 +36,6 @@ Usage: `sorttest [Options...]`
 | -p             | Use the parallel version of the sorting algorithm          |
 | -d --data      | Specify file name for input data                           |
 | -a --algorithm | Specify sort algorithm \<bubble\|insertion\|merge\|quick\> |
+| -t --threads   | Specify number of threads to use for parallel sort         |
 | -v --verify    | Verify that the results are sorted                         |
 |    --help      | Show this message                                          |

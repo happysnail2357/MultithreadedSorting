@@ -24,7 +24,7 @@ Run the following make command:
 
 Alternatively, compile with g++ directly:
 
-`g++ -o sorttest main.cpp Sequential/*.cpp Parallel/*.cpp`
+`g++ -o sorttest main.cpp Stopwatch.cpp Sequential/*.cpp Parallel/*.cpp`
 
 ## Usage
 

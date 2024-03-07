@@ -10,3 +10,4 @@ These files contain random sets of integers, for the purpose of testing the sort
 | LargeDataset.dat     | 50,000      |
 | VeryLargeDataset.dat | 100,000     |
 | HugeDataset.dat      | 500,000     |
+| MaxDataset.dat       | 1,000,000   |

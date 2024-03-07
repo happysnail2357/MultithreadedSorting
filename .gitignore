@@ -34,3 +34,6 @@
 # Program Outputs
 *.report
 *.dump
+
+# Program File
+sorttest

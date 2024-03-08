@@ -279,7 +279,7 @@ void dumpToFile(std::string outputFileName, std::vector<int32_t>* buffer)
 }
 
 
-void generateReport(std::string outputFileName, std::string inputFileName, SortAlgorithm algorithm, bool parallel, int32_t numThreads, std::string executionTime, std::string dateTime, bool wasVerified, bool verifyStatus)
+void generateReport(std::string outputFileName, std::string inputFileName, SortAlgorithm algorithm, bool parallel, int32_t numThreads, int32_t dataSize, std::string executionTime, std::string dateTime, bool wasVerified, bool verifyStatus)
 {
 	std::cout << " Saving report... ";
 	
@@ -289,6 +289,7 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 	
 	reportStr << "Timestamp         : " << dateTime << "\n";
 	reportStr << "Test Data         : " << inputFileName << "\n";
+	reportStr << "Data Length       : " << dataSize << "\n";
 	reportStr << "Sorting Algorithm : ";
 	
 	switch (algorithm)
@@ -322,7 +323,7 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 		reportStr << "Number of Threads : " << numThreads << "\n";
 	}
 	
-	reportStr << "Execution Time    : " << executionTime << "\n";
+	reportStr << "Execution Time    : " << executionTime << " seconds\n";
 	reportStr << "Verification      : ";
 	
 	if (wasVerified)
@@ -435,6 +436,47 @@ std::string getTimestampedFilename(std::string timestamp, SortAlgorithm algorith
 }
 
 
+void logInfo(SortAlgorithm algorithm, int32_t numThreads, int32_t dataSize, std::string executionTime)
+{
+	std::cout << " Saving to log... ";
+	
+	std::fstream log("log.csv", std::ios::in | std::ios::out | std::ios::app);
+	
+	if (log.is_open())
+	{
+		switch (algorithm)
+		{
+		case SortAlgorithm::Bubble:
+			
+			log << "Bubble Sort,";
+			break;
+		
+		case SortAlgorithm::Insertion:
+			
+			log << "Insertion Sort,";
+			break;
+		
+		case SortAlgorithm::Merge:
+			
+			log << "Merge Sort,";
+			break;
+		
+		case SortAlgorithm::Quick:
+			
+			log << "Quick Sort,";
+			break;
+		}
+		
+		log << numThreads << "," << dataSize << "," << executionTime << "\n";
+		
+		std::cout << "Done\n\n";
+	}
+	else
+	{
+		std::cout << "   ERROR: Failed to open log.\n\n";
+	}
+}
+
 
 /*** *** *** ENTRY POINT *** *** ***/
 
@@ -498,7 +540,11 @@ int main(int argc, char** argv)
 		success = verifyResults(&data, stampedFilename);
 	}
 	
-	generateReport(stampedFilename, dataFile, algorithm, parallel, numThreads, timer.getFormattedTime(), timestamp, verify, success);
+	std::string runTime = timer.getFormattedTime();
+	
+	generateReport(stampedFilename, dataFile, algorithm, parallel, numThreads, data.size(), runTime, timestamp, verify, success);
+	
+	logInfo(algorithm, ((parallel) ? numThreads : 1), data.size(), runTime);
 	
 	return 0;
 }

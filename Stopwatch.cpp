@@ -44,7 +44,5 @@ std::string Stopwatch::getFormattedTime()
 	
 	std::string time = std::to_string(this->duration.count());
 	
-	time.append(" seconds");
-	
 	return time;
 }

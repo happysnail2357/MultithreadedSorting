@@ -17,6 +17,18 @@
 
 
 
+/*** Constants ***/
+
+const char* usageStr = "\n Usage: sorttest [options...]\n\n -s             : Use sequential version of sorting algorithm\n -p             : Use parallel version of sorting algorithm\n -d --data      : Specify file name for input data\n -a --algorithm : Specify algorithm <bubble|insertion|merge|quick>\n -t --threads   : Specify number of threads to use for parallel sort\n -v --verify    : Verify that results are sorted\n    --help      : Show this message\n\n";
+
+const int32_t MIN_NUM_THREADS = 2;
+const int32_t MAX_NUM_THREADS = 100;
+const int32_t DEFAULT_NUM_THREADS = 4;
+
+
+
+/*** Data Structures ***/
+
 enum class SortAlgorithm
 {
 	None,
@@ -26,15 +38,34 @@ enum class SortAlgorithm
 	Quick
 };
 
-const char* usageStr = "\n Usage: sorttest [options...]\n\n -s             : Use sequential version of sorting algorithm\n -p             : Use parallel version of sorting algorithm\n -d --data      : Specify file name for input data\n -a --algorithm : Specify algorithm <bubble|insertion|merge|quick>\n -t --threads   : Specify number of threads to use for parallel sort\n -v --verify    : Verify that results are sorted\n    --help      : Show this message\n\n";
+struct SortParameters
+{
+	std::string dataFile = "";
+	SortAlgorithm algorithm{};
+	int32_t numThreads = DEFAULT_NUM_THREADS;
+	bool parallel{};
+	bool verify{};
+	
+	std::vector<int32_t> data;
+};
+
+struct OutputInfo
+{
+	std::string timestamp;
+	std::string stampedFilename;
+	
+	bool sortedCorrectly{};
+	
+	std::string runTime;
+};
 
 
-const int32_t MIN_NUM_THREADS = 2;
-const int32_t MAX_NUM_THREADS = 100;
-const int32_t DEFAULT_NUM_THREADS = 4;
 
+/*** Function Definitions ***/
 
-void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgorithm* algo, int32_t* numThreads, bool* parallel, bool* verify)
+// Parses the command line arguments and sets the values of 'param' appropriatly
+//
+void parseCommandLineArgs(int argc, char** argv, SortParameters* param)
 {
 	if (argc == 1)
 	{
@@ -53,11 +84,11 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 		}
 		else if (arg == "-s")
 		{
-			*parallel = false;
+			param->parallel = false;
 		}
 		else if (arg == "-p")
 		{
-			*parallel = true;
+			param->parallel = true;
 		}
 		else if (arg == "-d" || arg == "--data")
 		{
@@ -65,7 +96,7 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 			
 			if (argi < argc)
 			{
-				*dataFile = argv[argi];
+				param->dataFile = argv[argi];
 			}
 			else
 			{
@@ -82,13 +113,13 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 				std::string sort = argv[argi];
 				
 				if (sort == "bubble")
-					*algo = SortAlgorithm::Bubble;
+					param->algorithm = SortAlgorithm::Bubble;
 				else if (sort == "insertion")
-					*algo = SortAlgorithm::Insertion;
+					param->algorithm = SortAlgorithm::Insertion;
 				else if (sort == "merge")
-					*algo = SortAlgorithm::Merge;
+					param->algorithm = SortAlgorithm::Merge;
 				else if (sort == "quick")
-					*algo = SortAlgorithm::Quick;
+					param->algorithm = SortAlgorithm::Quick;
 				else
 				{
 					std::cout << "\n   ERROR: Unrecognized value for " << arg <<"\n\n";
@@ -113,14 +144,14 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 				{
 					try
 					{
-						*numThreads = std::stoi(num);
+						param->numThreads = std::stoi(num);
 						
-						if (*numThreads < MIN_NUM_THREADS)
+						if (param->numThreads < MIN_NUM_THREADS)
 						{
 							std::cout << "\n   ERROR: Value for " << arg << " must be at least " << MIN_NUM_THREADS << "\n\n";
 							exit(1);
 						}
-						else if (*numThreads > MAX_NUM_THREADS)
+						else if (param->numThreads > MAX_NUM_THREADS)
 						{
 							std::cout << "\n   ERROR: Value for " << arg << " must be no larger than " << MAX_NUM_THREADS << "\n\n";
 							exit(1);
@@ -156,7 +187,7 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 		}
 		else if (arg == "-v" || arg == "--verify")
 		{
-			*verify = true;
+			param->verify = true;
 		}
 		else
 		{
@@ -167,6 +198,8 @@ void parseCommandLineArgs(int argc, char** argv, std::string* dataFile, SortAlgo
 }
 
 
+// Opens 'fileName', reads integers, and places them into 'buffer' 
+//
 void loadTestData(std::string fileName, std::vector<int32_t>* buffer)
 {
 	std::ifstream dataFile;
@@ -202,45 +235,106 @@ void loadTestData(std::string fileName, std::vector<int32_t>* buffer)
 }
 
 
-void runSortingAlgorithm(SortAlgorithm algorithm, std::vector<int32_t>* buffer, bool parallelVersion, int32_t numThreads)
+// Calls the correct sorting function based on the values in 'param'
+//
+void runSortingAlgorithm(SortParameters* param)
 {
-	switch (algorithm)
+	switch (param->algorithm)
 	{
 	case SortAlgorithm::Bubble:
 		
-		if (parallelVersion)
-			parBubbleSort(buffer, numThreads);
+		if (param->parallel)
+			parBubbleSort(&(param->data), param->numThreads);
 		else
-			seqBubbleSort(buffer);
+			seqBubbleSort(&(param->data));
 		break;
 	
 	case SortAlgorithm::Insertion:
 		
-		if (parallelVersion)
-			parInsertionSort(buffer, numThreads);
+		if (param->parallel)
+			parInsertionSort(&(param->data), param->numThreads);
 		else
-			seqInsertionSort(buffer);
+			seqInsertionSort(&(param->data));
 		break;
 	
 	case SortAlgorithm::Merge:
 		
-		if (parallelVersion)
-			parMergeSort(buffer, numThreads);
+		if (param->parallel)
+			parMergeSort(&(param->data), param->numThreads);
 		else
-			seqMergeSort(buffer);
+			seqMergeSort(&(param->data));
 		break;
 	
 	case SortAlgorithm::Quick:
 		
-		if (parallelVersion)
-			parQuickSort(buffer, numThreads);
+		if (param->parallel)
+			parQuickSort(&(param->data), param->numThreads);
 		else
-			seqQuickSort(buffer);
+			seqQuickSort(&(param->data));
 		break;
 	}
 }
 
 
+// Gets a string with the current time and date (uses filename safe characters)
+//
+std::string getTimestamp()
+{
+	std::time_t t = std::time(0);
+	std::tm* now = std::localtime(&t);
+	
+	std::stringstream timestamp;
+	
+	timestamp	<< (now->tm_mon + 1) << '-'
+				<<  now->tm_mday << '-'
+				<< (now->tm_year + 1900) << '_'
+				<<  now->tm_hour << '\''
+				<<  now->tm_min  << '\''
+				<<  now->tm_sec;
+	
+	return timestamp.str();
+}
+
+
+// Creates a unique and descriptive filename using a timestamp and the sort parameters
+//
+std::string getTimestampedFilename(std::string timestamp, SortParameters* param)
+{
+	std::string file;
+	
+	switch (param->algorithm)
+	{
+	case SortAlgorithm::Bubble:
+		
+		file = "bubble_";
+		break;
+	
+	case SortAlgorithm::Insertion:
+		
+		file = "insertion_";
+		break;
+	
+	case SortAlgorithm::Merge:
+		
+		file = "merge_";
+		break;
+	
+	case SortAlgorithm::Quick:
+		
+		file = "quick_";
+		break;
+	}
+	
+	file.append(((param->parallel) ? "par_" : "seq_"));
+	
+	file.append(timestamp);
+	
+	return file;
+}
+
+
+// Checks if the data in 'buffer' is sorted from smallest to largest
+//
 bool isSorted(std::vector<int32_t>* buffer)
 {
 	for (int i = 0; i < buffer->size() - 1; i++)
@@ -255,7 +349,9 @@ bool isSorted(std::vector<int32_t>* buffer)
 }
 
 
-void dumpToFile(std::string outputFileName, std::vector<int32_t>* buffer)
+// Saves the integer data to a ".dump" file
+//
+void dumpToFile(std::vector<int32_t>* buffer, std::string outputFileName)
 {
 	outputFileName.append(".dump");
 	
@@ -279,7 +375,32 @@ void dumpToFile(std::string outputFileName, std::vector<int32_t>* buffer)
 }
 
 
-void generateReport(std::string outputFileName, std::string inputFileName, SortAlgorithm algorithm, bool parallel, int32_t numThreads, int32_t dataSize, std::string executionTime, std::string dateTime, bool wasVerified, bool verifyStatus)
+// Checks if the data was sorted correctly. If it is not, it calls dumpToFile()
+//
+bool verifyResults(std::vector<int32_t>* buffer, std::string outputFileName)
+{
+	std::cout << " Verifying... ";
+		
+	if (!isSorted(buffer))
+	{
+		std::cout << "\n\n   WARNING: Failed to sort test data. Dumping results to \"" << outputFileName << ".dump\"\n\n";
+		
+		dumpToFile(buffer, outputFileName);
+		
+		return false;
+	}
+	else
+	{
+		std::cout << "Done\n\n";
+		
+		return true;
+	}
+}
+
+
+// Saves a ".report" file with the results of the sorting
+//
+void generateReport(SortParameters* param, OutputInfo* info)
 {
 	std::cout << " Saving report... ";
 	
@@ -287,12 +408,12 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 	
 	std::stringstream reportStr;
 	
-	reportStr << "Timestamp         : " << dateTime << "\n";
-	reportStr << "Test Data         : " << inputFileName << "\n";
-	reportStr << "Data Length       : " << dataSize << "\n";
+	reportStr << "Timestamp         : " << info->timestamp << "\n";
+	reportStr << "Test Data         : " << param->dataFile << "\n";
+	reportStr << "Data Length       : " << param->data.size() << "\n";
 	reportStr << "Sorting Algorithm : ";
 	
-	switch (algorithm)
+	switch (param->algorithm)
 	{
 	case SortAlgorithm::Bubble:
 		
@@ -316,19 +437,19 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 	}
 	
 	reportStr << "\n";
-	reportStr << "Parallel Version  : " << ((parallel) ? "yes" : "no") << "\n";
+	reportStr << "Parallel Version  : " << ((param->parallel) ? "yes" : "no") << "\n";
 	
-	if (parallel)
+	if (param->parallel)
 	{
-		reportStr << "Number of Threads : " << numThreads << "\n";
+		reportStr << "Number of Threads : " << param->numThreads << "\n";
 	}
 	
-	reportStr << "Execution Time    : " << executionTime << " seconds\n";
+	reportStr << "Execution Time    : " << info->runTime << " seconds\n";
 	reportStr << "Verification      : ";
 	
-	if (wasVerified)
+	if (param->verify)
 	{
-		reportStr << ((verifyStatus) ? "Data was properly sorted" : "(ERROR) Data was not properly sorted");
+		reportStr << ((info->sortedCorrectly) ? "Data was properly sorted" : "(ERROR) Data was not properly sorted");
 	}
 	else
 	{
@@ -342,9 +463,9 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 	
 	std::ofstream report;
 	
-	outputFileName.append(".report");
+	info->stampedFilename.append(".report");
 	
-	report.open(outputFileName);
+	report.open(info->stampedFilename);
 	
 	if (report.is_open())
 	{
@@ -363,80 +484,9 @@ void generateReport(std::string outputFileName, std::string inputFileName, SortA
 }
 
 
-bool verifyResults(std::vector<int32_t>* buffer, std::string outputFile)
-{
-	std::cout << " Verifying... ";
-		
-	if (!isSorted(buffer))
-	{
-		std::cout << "\n\n   WARNING: Failed to sort test data. Dumping results to \"" << outputFile << ".dump\"\n\n";
-		
-		dumpToFile(outputFile, buffer);
-		
-		return false;
-	}
-	else
-	{
-		std::cout << "Done\n\n";
-		
-		return true;
-	}
-}
-
-
-std::string getTimestamp()
-{
-	std::time_t t = std::time(0);
-	std::tm* now = std::localtime(&t);
-	
-	std::stringstream timestamp;
-	
-	timestamp	<< (now->tm_mon + 1) << '-'
-				<<  now->tm_mday << '-'
-				<< (now->tm_year + 1900) << '_'
-				<<  now->tm_hour << '\''
-				<<  now->tm_min  << '\''
-				<<  now->tm_sec;
-	
-	return timestamp.str();
-}
-
-std::string getTimestampedFilename(std::string timestamp, SortAlgorithm algorithm, bool parallel)
-{
-	std::string file;
-	
-	switch (algorithm)
-	{
-	case SortAlgorithm::Bubble:
-		
-		file = "bubble_";
-		break;
-	
-	case SortAlgorithm::Insertion:
-		
-		file = "insertion_";
-		break;
-	
-	case SortAlgorithm::Merge:
-		
-		file = "merge_";
-		break;
-	
-	case SortAlgorithm::Quick:
-		
-		file = "quick_";
-		break;
-	}
-	
-	file.append(((parallel) ? "par_" : "seq_"));
-	
-	file.append(timestamp);
-	
-	return file;
-}
-
-
-void logInfo(SortAlgorithm algorithm, int32_t numThreads, int32_t dataSize, std::string executionTime)
+// Adds an entry to "log.csv"
+//
+void logInfo(SortParameters* param, OutputInfo* info)
 {
 	std::cout << " Saving to log... ";
 	
@@ -444,7 +494,7 @@ void logInfo(SortAlgorithm algorithm, int32_t numThreads, int32_t dataSize, std:
 	
 	if (log.is_open())
 	{
-		switch (algorithm)
+		switch (param->algorithm)
 		{
 		case SortAlgorithm::Bubble:
 			
@@ -467,7 +517,7 @@ void logInfo(SortAlgorithm algorithm, int32_t numThreads, int32_t dataSize, std:
 			break;
 		}
 		
-		log << numThreads << "," << dataSize << "," << executionTime << "\n";
+		log << ((param->parallel) ? param->numThreads : 1) << "," << param->data.size() << "," << info->runTime << "\n";
 		
 		std::cout << "Done\n\n";
 	}
@@ -478,26 +528,23 @@ void logInfo(SortAlgorithm algorithm, int32_t numThreads, int32_t dataSize, std:
 }
 
 
+
 /*** *** *** ENTRY POINT *** *** ***/
 
 int main(int argc, char** argv)
 {
-	/* Obtain options from user */
+	/* Obtain parameters from user */
 	
-	std::string dataFile = "";
-	SortAlgorithm algorithm{};
-	int32_t numThreads = DEFAULT_NUM_THREADS;
-	bool parallel = false;
-	bool verify = false;
+	SortParameters param{};
 	
-	parseCommandLineArgs(argc, argv, &dataFile, &algorithm, &numThreads, &parallel, &verify);
+	parseCommandLineArgs(argc, argv, &param);
 	
-	if (dataFile == "")
+	if (param.dataFile == "")
 	{
 		std::cout << "\n   ERROR: Input file not specified\n\n";
 		exit(1);
 	}
-	else if (algorithm == SortAlgorithm::None)
+	else if (param.algorithm == SortAlgorithm::None)
 	{
 		std::cout << "\n   ERROR: Sorting algorithm not specified\n\n";
 		exit(1);
@@ -506,9 +553,7 @@ int main(int argc, char** argv)
 	
 	/* Prepare Test Data */
 	
-	std::vector<int32_t> data;
-	
-	loadTestData(dataFile, &data);
+	loadTestData(param.dataFile, &(param.data));
 	
 	
 	/* Sort Test Data */
@@ -518,33 +563,36 @@ int main(int argc, char** argv)
 	Stopwatch timer;
 	timer.start();
 	
-	runSortingAlgorithm(algorithm, &data, parallel, numThreads);
+	runSortingAlgorithm(&param);
 	
 	timer.stop();
 	
 	std::cout << "\n *** Sort complete ***\n\n";
 	
 	
+	/* Get Execution Time */
+	
+	OutputInfo info{};
+	
+	info.runTime = timer.getFormattedTime();
+	
+	
 	/* Generate Timestamp Info */
 	
-	std::string timestamp = getTimestamp();
-	std::string stampedFilename = getTimestampedFilename(timestamp, algorithm, parallel);
+	info.timestamp = getTimestamp();
+	info.stampedFilename = getTimestampedFilename(info.timestamp, &param);
 	
 	
-	/* Verify and Report */
+	/* Verify Results */
 	
-	bool success = false;
-	
-	if (verify)
+	if (param.verify)
 	{
-		success = verifyResults(&data, stampedFilename);
+		info.sortedCorrectly = verifyResults(&(param.data), info.stampedFilename);
 	}
 	
-	std::string runTime = timer.getFormattedTime();
+	generateReport(&param, &info);
 	
-	generateReport(stampedFilename, dataFile, algorithm, parallel, numThreads, data.size(), runTime, timestamp, verify, success);
-	
-	logInfo(algorithm, ((parallel) ? numThreads : 1), data.size(), runTime);
+	logInfo(&param, &info);
 	
 	return 0;
 }
